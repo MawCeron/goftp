@@ -1,0 +1,21 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: stable
+      - run: go build ./...
+      - run: go vet ./...
+      # The older tests need pure-ftpd and proftpd, which build_test_server.sh
+      # compiles, so only the tests that bring their own server run here.
+      # Add a new one of those to this pattern.
+      - run: GOFTP_SKIP_SERVERS=1 go test -run 'PASVHost|PercentSigns' -v .
