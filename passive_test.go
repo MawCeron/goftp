@@ -20,8 +20,9 @@ import (
 type pasvServer struct {
 	ln net.Listener
 
-	mu  sync.Mutex
-	via string
+	mu    sync.Mutex
+	via   string
+	lines []string
 }
 
 func startPASVServer(t *testing.T) *pasvServer {
@@ -49,6 +50,13 @@ func startPASVServer(t *testing.T) *pasvServer {
 	return s
 }
 
+// sent returns the command lines the server received.
+func (s *pasvServer) sent() []string {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return append([]string(nil), s.lines...)
+}
+
 func (s *pasvServer) usedHost() string {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -72,6 +80,9 @@ func (s *pasvServer) serve(c net.Conn) {
 		if err != nil {
 			return
 		}
+		s.mu.Lock()
+		s.lines = append(s.lines, strings.TrimSpace(line))
+		s.mu.Unlock()
 		verb, _, _ := strings.Cut(strings.TrimSpace(line), " ")
 		switch strings.ToUpper(verb) {
 		case "USER":
